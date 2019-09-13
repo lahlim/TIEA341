@@ -23,6 +23,7 @@ module Main where
       deriving (Eq,Show)
   data Rock   = Rock   PointInSpace Size Velocity
       deriving (Eq,Show)
+  --Change 
   data Ufo   = Ufo   PointInSpace Velocity      
       deriving (Eq,Show)
   
@@ -36,7 +37,7 @@ module Main where
                      ] -- The default Rocks
                      (Ship (0,0) (0,5))
                      -- The initial ship
-                     (Ufo (120,120) (2,6)) -- Ufo
+                     (Ufo (120,120) (2,6)) -- Ufo --Change
                      [] -- The initial bullets (none)
   
   
@@ -44,11 +45,11 @@ module Main where
   
   simulateWorld _        GameOver          = GameOver  
   
-  simulateWorld timeStep (Play rocks (Ship shipPos shipV) (Ufo ufoPos ufoV) bullets) 
+  simulateWorld timeStep (Play rocks (Ship shipPos shipV) (Ufo ufoPos ufoV) bullets)  --Change
     | any (collidesWith shipPos) rocks  = GameOver
     | otherwise = Play (concatMap updateRock rocks) 
                                 (Ship newShipPos shipV)
-                                (Ufo newUfoPos ufoV)
+                                (Ufo newUfoPos ufoV) --Change
                                 (concat (map updateBullet bullets))
     where
         collidesWith :: PointInSpace -> Rock -> Bool
@@ -106,11 +107,11 @@ module Main where
        . text 
        $ "Game Over! Right Clik to Play!" --Change 1
   
-  drawWorld (Play rocks (Ship (x,y) (vx,vy)) (Ufo (a,b) (ax,ay)) bullets)
+  drawWorld (Play rocks (Ship (x,y) (vx,vy)) (Ufo (a,b) (ax,ay)) bullets) --Change
     = pictures [ship, asteroids,ufo,shots]
      where 
       ship      = color red (pictures [translate x y (ThickCircle 10 20)])
-      ufo      = color green (pictures [translate a b (ThickCircle 20 15)])
+      ufo      = color green (pictures [translate a b (ThickCircle 20 15)]) --Change
       asteroids = pictures [translate x y (color orange (ThickCircle s (s/5))) 
                            | Rock   (x,y) s _ <- rocks]
       shots     = pictures [translate x y (color violet (circle 2)) 
@@ -127,15 +128,15 @@ module Main where
   
 
   handleEvents (EventKey (MouseButton LeftButton) Down _ clickPos)
-               (Play rocks (Ship shipPos shipVel) (Ufo ufoPos ufoVel) bullets)
-               = Play rocks (Ship shipPos newVel) (Ufo ufoPos newUfoVel)
+               (Play rocks (Ship shipPos shipVel) (Ufo ufoPos ufoVel) bullets) --Change
+               = Play rocks (Ship shipPos newVel) (Ufo ufoPos newUfoVel)--Change
                             (newBullet : bullets)
    where 
        newBullet = Bullet shipPos 
                           (negate 150 .* norm (shipPos .- clickPos)) 
                           0
        newVel    = shipVel .+ (50 .* norm (shipPos .- clickPos))
-       newUfoVel    = shipVel .+ (-100 .* norm (shipPos .- clickPos))
+       newUfoVel    = shipVel .+ (-100 .* norm (shipPos .- clickPos)) --Change
   
   handleEvents _ w = w
   
