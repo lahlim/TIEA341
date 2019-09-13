@@ -3,8 +3,10 @@ module Main where
   import Graphics.Gloss.Interface.Pure.Game
   import Graphics.Gloss.Interface.Pure.Simulate
   import Graphics.Gloss.Interface.Pure.Display
-  
-  data AsteroidWorld = Play [Rock] Ship [Bullet]
+  import Graphics.Gloss.Data.Picture
+
+ 
+  data AsteroidWorld = Play [Rock] Ship Ufo [Bullet]
                      | GameOver 
                      deriving (Eq,Show)
   
@@ -14,22 +16,27 @@ module Main where
   
   
   
+  
   data Ship   = Ship   PointInSpace Velocity      
       deriving (Eq,Show)
   data Bullet = Bullet PointInSpace Velocity Age  
       deriving (Eq,Show)
-  data Rock   = Rock   PointInSpace Size Velocity 
+  data Rock   = Rock   PointInSpace Size Velocity
+      deriving (Eq,Show)
+  data Ufo   = Ufo   PointInSpace Velocity      
       deriving (Eq,Show)
   
   initialWorld :: AsteroidWorld
   initialWorld = Play
-                     [Rock (150,150)  45 (2,6)    
+                     [Rock (150,150)  45 (2,6)  
                      ,Rock (-45,201)  45 (13,-8) 
                      ,Rock (45,22)    25 (-2,8)  
                      ,Rock (-210,-15) 30 (-2,-8) 
-                     ,Rock (-45,-201) 25 (8,2)   
-                     ] -- The default rocks
-                     (Ship (0,0) (0,5)) -- The initial ship
+                     ,Rock (-45,-201) 25 (8,2)  
+                     ] -- The default Rocks
+                     (Ship (0,0) (0,5))
+                     -- The initial ship
+                     (Ufo (120,120) (2,6)) -- Ufo
                      [] -- The initial bullets (none)
   
   
@@ -37,10 +44,11 @@ module Main where
   
   simulateWorld _        GameOver          = GameOver  
   
-  simulateWorld timeStep (Play rocks (Ship shipPos shipV) bullets) 
-    | any (collidesWith shipPos) rocks = GameOver
+  simulateWorld timeStep (Play rocks (Ship shipPos shipV) (Ufo ufoPos ufoV) bullets) 
+    | any (collidesWith shipPos) rocks  = GameOver
     | otherwise = Play (concatMap updateRock rocks) 
                                 (Ship newShipPos shipV)
+                                (Ufo newUfoPos ufoV)
                                 (concat (map updateBullet bullets))
     where
         collidesWith :: PointInSpace -> Rock -> Bool
@@ -72,6 +80,9 @@ module Main where
   
         newShipPos :: PointInSpace
         newShipPos = restoreToScreen (shipPos .+ timeStep .* shipV)
+
+        newUfoPos :: PointInSpace
+        newUfoPos = restoreToScreen (ufoPos .+ timeStep .* ufoV)
   
   splitRock :: Rock -> [Rock]
   splitRock (Rock p s v) = [Rock p (s/2) (3 .* rotateV (pi/3)  v)
@@ -89,34 +100,42 @@ module Main where
   drawWorld :: AsteroidWorld -> Picture
   
   drawWorld GameOver 
-     = scale 0.3 0.3 
-       . translate (-400) 0 
+     = scale 0.15 0.2 
+       . translate (-400) 0
        . color red 
        . text 
-       $ "Game Over!"
+       $ "Game Over! Right Clik to Play!" --Change 1
   
-  drawWorld (Play rocks (Ship (x,y) (vx,vy)) bullets)
-    = pictures [ship, asteroids,shots]
+  drawWorld (Play rocks (Ship (x,y) (vx,vy)) (Ufo (a,b) (ax,ay)) bullets)
+    = pictures [ship, asteroids,ufo,shots]
      where 
-      ship      = color red (pictures [translate x y (circle 10)])
-      asteroids = pictures [translate x y (color orange (circle s)) 
+      ship      = color red (pictures [translate x y (ThickCircle 10 20)])
+      ufo      = color green (pictures [translate a b (ThickCircle 20 15)])
+      asteroids = pictures [translate x y (color orange (ThickCircle s (s/5))) 
                            | Rock   (x,y) s _ <- rocks]
-      shots     = pictures [translate x y (color red (circle 2)) 
+      shots     = pictures [translate x y (color violet (circle 2)) 
                            | Bullet (x,y) _ _ <- bullets]
   
   handleEvents :: Event -> AsteroidWorld -> AsteroidWorld
-  
+
+  --Change 2
+  handleEvents (EventKey (MouseButton RightButton) _ _ _) GameOver =  initialWorld
   handleEvents _ GameOver = GameOver
+
   
+  
+  
+
   handleEvents (EventKey (MouseButton LeftButton) Down _ clickPos)
-               (Play rocks (Ship shipPos shipVel) bullets)
-               = Play rocks (Ship shipPos newVel) 
+               (Play rocks (Ship shipPos shipVel) (Ufo ufoPos ufoVel) bullets)
+               = Play rocks (Ship shipPos newVel) (Ufo ufoPos newUfoVel)
                             (newBullet : bullets)
    where 
        newBullet = Bullet shipPos 
                           (negate 150 .* norm (shipPos .- clickPos)) 
                           0
        newVel    = shipVel .+ (50 .* norm (shipPos .- clickPos))
+       newUfoVel    = shipVel .+ (-100 .* norm (shipPos .- clickPos))
   
   handleEvents _ w = w
   
@@ -155,4 +174,5 @@ module Main where
            drawWorld 
            handleEvents
            simulateWorld
+           
   
