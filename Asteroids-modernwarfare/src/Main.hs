@@ -165,7 +165,7 @@ module Main where
                           (negate 150 .* norm (shipPos .- clickPos)) 
                           0
        newVel    = shipVel .+ (50 .* norm (shipPos .- clickPos))
-       -- 
+       -- Lähestyy klikkauksia, jos hp yli 2 muuten pakenee. jos alle 1 tuhotaan
        newUfoVel = if ufoHealth > 2 then (shipVel .+ (100 .* norm (shipPos .- clickPos  ))) 
         else (shipVel .+ (-100 .* norm (shipPos .- clickPos  )))  
   
