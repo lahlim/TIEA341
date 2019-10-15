@@ -14,6 +14,7 @@ module Main where
   type Size         = Float
   type Age          = Float
   type Health       = Integer
+  type UfoState     = Either
   
   
   
@@ -38,7 +39,7 @@ module Main where
                      ] -- The default Rocks
                      (Ship (0,0) (0,5))
                      -- The initial ship
-                     (Ufo (120,120) (2,6) 2) -- Ufo --Change
+                     (Ufo (120,120) (2,6) 3) -- Ufo --Change
                      [] -- The initial bullets (none)
   
   
@@ -75,11 +76,12 @@ module Main where
 
         updateUfo :: Ufo ->  Ufo 
         updateUfo u@(Ufo p v h) 
+         | ufoCollidesWithBullet u && h < 1
+         =  (Ufo (-100000,0) v h) 
          
          | ufoCollidesWithBullet u 
            =  (damageUfo u)
-         | ufoCollidesWithBullet u && h < 1
-           =  u 
+         
          | otherwise
            =  u 
        
@@ -163,8 +165,9 @@ module Main where
                           (negate 150 .* norm (shipPos .- clickPos)) 
                           0
        newVel    = shipVel .+ (50 .* norm (shipPos .- clickPos))
-       -- Tähän ufon siirtymä velozity
-       newUfoVel    = shipVel*0 .+ (0 .* norm (shipPos .- clickPos  )*0) --Change
+       -- 
+       newUfoVel = if ufoHealth > 2 then (shipVel .+ (100 .* norm (shipPos .- clickPos  ))) 
+        else (shipVel .+ (-100 .* norm (shipPos .- clickPos  )))  
   
   handleEvents _ w = w
   
